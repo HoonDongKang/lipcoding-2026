@@ -11,6 +11,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useStream } from '../hooks/useStream';
+import { loadGitHubSettings } from '../lib/githubSettings';
 
 interface AgentInputProps {
   selectedDate: string;
@@ -51,7 +52,11 @@ export function AgentInput({ selectedDate, onTaskCreated }: AgentInputProps) {
   const handleSubmit = () => {
     const trimmed = input.trim();
     if (!trimmed || streaming) return;
-    startStream(trimmed, selectedDate);
+    const { pat, repo } = loadGitHubSettings();
+    startStream(trimmed, selectedDate, {
+      githubPat: pat || undefined,
+      githubRepo: repo || undefined,
+    });
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

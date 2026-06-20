@@ -14,12 +14,17 @@ export interface ChatResponse {
   }>;
 }
 
+export interface AgentSettings {
+  githubPat?: string;
+  githubRepo?: string;
+}
+
 export const agentApi = {
-  chat: async (message: string, date?: string): Promise<ChatResponse> => {
+  chat: async (message: string, date?: string, settings?: AgentSettings): Promise<ChatResponse> => {
     const res = await fetch(`${API_BASE}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, date }),
+      body: JSON.stringify({ message, date, ...settings }),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
@@ -28,9 +33,11 @@ export const agentApi = {
     return res.json() as Promise<ChatResponse>;
   },
 
-  streamUrl: (message: string, date?: string): string => {
+  streamUrl: (message: string, date?: string, settings?: AgentSettings): string => {
     const params = new URLSearchParams({ message });
     if (date) params.set('date', date);
+    if (settings?.githubPat) params.set('githubPat', settings.githubPat);
+    if (settings?.githubRepo) params.set('githubRepo', settings.githubRepo);
     return `${API_BASE}/stream?${params.toString()}`;
   },
 };

@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useTasks } from './hooks/useTasks';
 import { CalendarView } from './components/CalendarView';
 import { TaskList } from './components/TaskList';
 import { TaskInput } from './components/TaskInput';
 import { AgentInput } from './components/AgentInput';
+import { SettingsModal } from './components/SettingsModal';
 
 function App() {
+  const [showSettings, setShowSettings] = useState(false);
   const {
     tasks,
     allTasksByDate,
@@ -21,13 +24,16 @@ function App() {
 
   return (
     <div className="w-[400px] h-[600px] bg-gray-50 flex flex-col overflow-hidden">
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-blue-600 text-white flex-shrink-0">
         <span className="font-bold text-base">Smart Task Hub</span>
         <button
+          onClick={() => setShowSettings(true)}
           className="text-blue-200 hover:text-white transition-colors text-lg"
           aria-label="Settings"
-          title="Settings"
+          title="GitHub 설정"
         >
           ⚙️
         </button>

@@ -36,13 +36,15 @@ export class AgentController {
 
   /**
    * GET /agent/stream
-   * Query: message, date
+   * Query: message, date, githubPat, githubRepo
    * Returns Server-Sent Events (SSE) stream.
    */
   @Sse('stream')
   stream(
     @Query('message') message: string,
     @Query('date') date?: string,
+    @Query('githubPat') githubPat?: string,
+    @Query('githubRepo') githubRepo?: string,
   ): Observable<MessageEvent> {
     if (!message || typeof message !== 'string') {
       throw new BadRequestException('message query param is required');
@@ -50,6 +52,6 @@ export class AgentController {
     if (message.length > 500) {
       throw new BadRequestException('message must be 500 characters or less');
     }
-    return this.agentService.stream(message, date) as Observable<MessageEvent>;
+    return this.agentService.stream(message, date, githubPat, githubRepo) as Observable<MessageEvent>;
   }
 }
