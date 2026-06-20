@@ -83,6 +83,21 @@ export function TaskItem({ task, onToggle, onRemove }: TaskItemProps) {
         </span>
       )}
 
+      {/* GitHub Issue link */}
+      {task.githubIssueUrl && (
+        <a
+          href={task.githubIssueUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 flex-shrink-0 transition-colors"
+          title="GitHub Issue 보기"
+          aria-label={`GitHub Issue: ${task.title}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          🔗 #
+        </a>
+      )}
+
       {/* Delete button */}
       <button
         onClick={() => onRemove(task.id)}

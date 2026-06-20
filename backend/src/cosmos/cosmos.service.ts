@@ -10,8 +10,7 @@ export class CosmosService implements OnModuleInit {
 
   private readonly endpoint = process.env.COSMOS_ENDPOINT ?? '';
   private readonly key = process.env.COSMOS_KEY ?? '';
-  private readonly databaseId =
-    process.env.COSMOS_DATABASE ?? 'smarttaskhub';
+  private readonly databaseId = process.env.COSMOS_DATABASE ?? 'smarttaskhub';
   private readonly containerId = process.env.COSMOS_CONTAINER ?? 'tasks';
 
   async onModuleInit(): Promise<void> {

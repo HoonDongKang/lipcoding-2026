@@ -1,13 +1,19 @@
 /**
- * AgentService — Copilot SDK BYOK (Azure OpenAI) AI Agent
+ * AgentService — Azure OpenAI AI Agent with GitHub Tool Integration
  *
- * Uses @github/copilot-sdk for tool definitions and openai (AzureOpenAI)
- * for actual LLM calls with Tool Calling + SSE streaming.
+ * Uses openai (AzureOpenAI) for LLM calls with Tool Calling + SSE streaming.
+ * Includes createGitHubIssue tool that calls GitHub REST API directly.
+ *
+ * Note: @github/copilot-sdk (v1.x) is a CLI JSON-RPC control SDK and does not
+ * expose a BYOK LLM pattern; we therefore call Azure OpenAI directly and use
+ * GitHub REST API for issue creation.
  *
  * Environment variables:
- *   AZURE_OPENAI_ENDPOINT  — e.g. https://xxx.openai.azure.com/
- *   AZURE_OPENAI_KEY       — Azure API key
+ *   AZURE_OPENAI_ENDPOINT   — e.g. https://xxx.openai.azure.com/
+ *   AZURE_OPENAI_KEY        — Azure API key
  *   AZURE_OPENAI_DEPLOYMENT — deployment name (default: gpt-4o)
+ *   GITHUB_PAT              — GitHub Personal Access Token (repo scope)
+ *   GITHUB_REPO             — owner/repo (default: HoonDongKang/lipcoding-2026)
  */
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -112,6 +118,32 @@ const TOOLS: ChatCompletionTool[] = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'createGitHubIssue',
+      description:
+        '할 일에 대한 GitHub 이슈를 생성합니다. 사용자가 GitHub 이슈 만들기 또는 이슈 등록을 요청할 때 사용합니다.',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: '이슈 제목',
+          },
+          body: {
+            type: 'string',
+            description: '이슈 내용 (마크다운 지원)',
+          },
+          taskId: {
+            type: 'string',
+            description: '연결할 태스크 ID (있으면 이슈 URL을 태스크에 저장)',
+          },
+        },
+        required: ['title'],
+      },
+    },
+  },
 ];
 
 // ─── System prompt ────────────────────────────────────────────────────────────
@@ -123,12 +155,14 @@ const SYSTEM_PROMPT = `당신은 Smart Task Hub의 AI 비서입니다.
 - createTask: 새 할 일 생성
 - prioritizeTasks: 특정 날짜의 할 일 우선순위 분석
 - decomposeTask: 복잡한 태스크를 서브태스크로 분해
+- createGitHubIssue: 할 일에 대한 GitHub 이슈 생성 (사용자가 "GitHub 이슈 만들어줘", "이슈 등록해줘" 등을 요청할 때 사용)
 
 규칙:
 1. 날짜가 언급되지 않으면 오늘 날짜를 사용하세요.
 2. "다음 주 월요일" 등 상대적 날짜 표현은 YYYY-MM-DD로 변환하세요.
 3. 항상 한국어로 응답하세요.
-4. 도구 호출 후 결과를 사용자에게 친절하게 설명하세요.`;
+4. 도구 호출 후 결과를 사용자에게 친절하게 설명하세요.
+5. GitHub 이슈 생성 후 이슈 URL을 사용자에게 알려주세요.`;
 
 @Injectable()
 export class AgentService {
@@ -244,6 +278,101 @@ export class AgentService {
     };
   }
 
+  async executeCreateGitHubIssue(params: {
+    title: string;
+    body?: string;
+    taskId?: string;
+  }): Promise<ToolCallResult> {
+    const pat = this.configService.get<string>('GITHUB_PAT');
+    const repo =
+      this.configService.get<string>('GITHUB_REPO') ??
+      'HoonDongKang/lipcoding-2026';
+
+    if (!pat) {
+      this.logger.warn('[createGitHubIssue] GITHUB_PAT not configured');
+      return {
+        toolName: 'createGitHubIssue',
+        result: {
+          error:
+            'GITHUB_PAT가 설정되지 않았습니다. 환경변수 GITHUB_PAT를 등록해주세요.',
+        },
+      };
+    }
+
+    const [owner, repoName] = repo.split('/');
+
+    let issueData: { html_url?: string; number?: number; message?: string };
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${owner}/${repoName}/issues`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${pat}`,
+            Accept: 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'SmartTaskHub/1.0',
+          },
+          body: JSON.stringify({
+            title: params.title,
+            body: params.body ?? '',
+          }),
+        },
+      );
+
+      issueData = (await response.json()) as {
+        html_url?: string;
+        number?: number;
+        message?: string;
+      };
+
+      if (!response.ok) {
+        this.logger.error(
+          `[createGitHubIssue] GitHub API error: ${issueData.message ?? response.status}`,
+        );
+        return {
+          toolName: 'createGitHubIssue',
+          result: {
+            error: `GitHub API 오류: ${issueData.message ?? response.status}`,
+          },
+        };
+      }
+    } catch (err) {
+      this.logger.error('[createGitHubIssue] fetch failed', err);
+      return {
+        toolName: 'createGitHubIssue',
+        result: {
+          error: `GitHub API 호출 실패: ${err instanceof Error ? err.message : String(err)}`,
+        },
+      };
+    }
+
+    // Link the issue URL to the task if taskId is provided
+    if (params.taskId && issueData.html_url) {
+      try {
+        await this.tasksService.update(params.taskId, {
+          githubIssueUrl: issueData.html_url,
+        });
+        this.logger.log(
+          `[createGitHubIssue] Linked issue #${issueData.number} → task ${params.taskId}`,
+        );
+      } catch (updateErr) {
+        this.logger.warn(
+          `[createGitHubIssue] Could not link issue to task ${params.taskId}: ${String(updateErr)}`,
+        );
+      }
+    }
+
+    return {
+      toolName: 'createGitHubIssue',
+      result: {
+        issueUrl: issueData.html_url,
+        issueNumber: issueData.number,
+        repo,
+      },
+    };
+  }
+
   private async dispatchTool(
     name: string,
     args: Record<string, unknown>,
@@ -261,6 +390,10 @@ export class AgentService {
       case 'decomposeTask':
         return this.executeDecomposeTask(
           args as { taskId: string; subtasks: string[] },
+        );
+      case 'createGitHubIssue':
+        return this.executeCreateGitHubIssue(
+          args as { title: string; body?: string; taskId?: string },
         );
       default:
         return { toolName: name, result: { error: `Unknown tool: ${name}` } };

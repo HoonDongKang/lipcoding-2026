@@ -21,6 +21,7 @@ const mockTask = (overrides: Partial<Task> = {}): Task => ({
 const mockTasksService = {
   create: jest.fn(),
   findByDate: jest.fn(),
+  update: jest.fn(),
 };
 
 const mockConfigService = {
@@ -126,14 +127,31 @@ describe('AgentService', () => {
   describe('executePrioritizeTasks', () => {
     it('returns tasks sorted by priority (high → medium → low)', async () => {
       const tasks: Task[] = [
-        mockTask({ id: '1', title: 'Low task', priority: 'low', completed: false }),
-        mockTask({ id: '2', title: 'High task', priority: 'high', completed: false }),
-        mockTask({ id: '3', title: 'Medium task', priority: 'medium', completed: false }),
+        mockTask({
+          id: '1',
+          title: 'Low task',
+          priority: 'low',
+          completed: false,
+        }),
+        mockTask({
+          id: '2',
+          title: 'High task',
+          priority: 'high',
+          completed: false,
+        }),
+        mockTask({
+          id: '3',
+          title: 'Medium task',
+          priority: 'medium',
+          completed: false,
+        }),
         mockTask({ id: '4', title: 'Done', priority: 'high', completed: true }),
       ];
       mockTasksService.findByDate.mockResolvedValue(tasks);
 
-      const result = await service.executePrioritizeTasks({ date: '2026-06-20' });
+      const result = await service.executePrioritizeTasks({
+        date: '2026-06-20',
+      });
       const data = result.result as {
         date: string;
         total: number;
@@ -150,7 +168,9 @@ describe('AgentService', () => {
     it('returns empty list when no pending tasks', async () => {
       mockTasksService.findByDate.mockResolvedValue([]);
 
-      const result = await service.executePrioritizeTasks({ date: '2026-06-20' });
+      const result = await service.executePrioritizeTasks({
+        date: '2026-06-20',
+      });
       const data = result.result as { total: number; tasks: unknown[] };
 
       expect(data.total).toBe(0);
@@ -162,8 +182,16 @@ describe('AgentService', () => {
 
   describe('executeDecomposeTask', () => {
     it('creates subtasks with parentId set', async () => {
-      const subtask1 = mockTask({ id: 'sub-1', title: '설계', parentId: 'parent-1' });
-      const subtask2 = mockTask({ id: 'sub-2', title: '구현', parentId: 'parent-1' });
+      const subtask1 = mockTask({
+        id: 'sub-1',
+        title: '설계',
+        parentId: 'parent-1',
+      });
+      const subtask2 = mockTask({
+        id: 'sub-2',
+        title: '구현',
+        parentId: 'parent-1',
+      });
       mockTasksService.create
         .mockResolvedValueOnce(subtask1)
         .mockResolvedValueOnce(subtask2);
@@ -189,6 +217,119 @@ describe('AgentService', () => {
     });
   });
 
+  // ─── executeCreateGitHubIssue ─────────────────────────────────────────────
+
+  describe('executeCreateGitHubIssue', () => {
+    const mockFetch = jest.fn();
+
+    beforeEach(() => {
+      global.fetch = mockFetch;
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('returns error when GITHUB_PAT is not configured', async () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'GITHUB_PAT') return undefined;
+        return undefined;
+      });
+
+      const result = await service.executeCreateGitHubIssue({
+        title: '테스트 이슈',
+      });
+
+      expect(result.toolName).toBe('createGitHubIssue');
+      expect((result.result as { error: string }).error).toContain(
+        'GITHUB_PAT',
+      );
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('creates a GitHub issue and returns issueUrl', async () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'GITHUB_PAT') return 'ghp_testtoken';
+        if (key === 'GITHUB_REPO') return 'testowner/testrepo';
+        return undefined;
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            html_url: 'https://github.com/testowner/testrepo/issues/42',
+            number: 42,
+          }),
+      });
+
+      const result = await service.executeCreateGitHubIssue({
+        title: '테스트 이슈',
+        body: '이슈 내용',
+      });
+
+      expect(result.toolName).toBe('createGitHubIssue');
+      const data = result.result as {
+        issueUrl: string;
+        issueNumber: number;
+        repo: string;
+      };
+      expect(data.issueUrl).toBe(
+        'https://github.com/testowner/testrepo/issues/42',
+      );
+      expect(data.issueNumber).toBe(42);
+      expect(data.repo).toBe('testowner/testrepo');
+    });
+
+    it('links issue URL to task when taskId is provided', async () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'GITHUB_PAT') return 'ghp_testtoken';
+        if (key === 'GITHUB_REPO') return 'testowner/testrepo';
+        return undefined;
+      });
+
+      const issueUrl = 'https://github.com/testowner/testrepo/issues/7';
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ html_url: issueUrl, number: 7 }),
+      });
+      mockTasksService.update.mockResolvedValue(
+        mockTask({ id: 'task-abc', githubIssueUrl: issueUrl }),
+      );
+
+      await service.executeCreateGitHubIssue({
+        title: '이슈 연결 테스트',
+        taskId: 'task-abc',
+      });
+
+      expect(mockTasksService.update).toHaveBeenCalledWith('task-abc', {
+        githubIssueUrl: issueUrl,
+      });
+    });
+
+    it('returns error when GitHub API responds with non-ok status', async () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'GITHUB_PAT') return 'ghp_badtoken';
+        if (key === 'GITHUB_REPO') return 'testowner/testrepo';
+        return undefined;
+      });
+
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ message: 'Bad credentials' }),
+      });
+
+      const result = await service.executeCreateGitHubIssue({
+        title: '실패 이슈',
+      });
+
+      expect((result.result as { error: string }).error).toContain(
+        'Bad credentials',
+      );
+    });
+  });
+
   // ─── stream — no config ───────────────────────────────────────────────────
 
   describe('stream — no config', () => {
@@ -199,7 +340,7 @@ describe('AgentService', () => {
       const obs = service.stream('테스트');
 
       obs.subscribe({
-        next: (ev) => events.push(ev as { data: { type: string; content?: string } }),
+        next: (ev) => events.push(ev),
         complete: () => {
           expect(events.length).toBeGreaterThanOrEqual(2);
           const tokenEvent = events.find((e) => e.data.type === 'token');
