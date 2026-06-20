@@ -72,8 +72,8 @@ GitHub Issue/PR 연동으로 개발자 생산성을 높인다.
 
 ## 7. 현재 상태 (Remy가 업데이트)
 
-- **현재 스프린트**: Sprint 1 대기 중
-- **완료된 스프린트**: Sprint 0 ✅
+- **현재 스프린트**: Sprint 2 대기 중
+- **완료된 스프린트**: Sprint 0 ✅, Sprint 1 ✅
 - **열린 이슈**: 없음
 - **마지막 업데이트**: 2026-06-20
 
@@ -84,7 +84,7 @@ GitHub Issue/PR 연동으로 개발자 생산성을 높인다.
 | 스프린트 | 목표 | 상태 | 계획 |
 |---|---|---|---|
 | Sprint 0 | 문서화 + 에이전트 설정 | ✅ 완료 | — |
-| Sprint 1 | 스캐폴딩 + CI/CD + Azure 초기 배포 | 🔜 대기 | `docs/sprint-1/plan.md` |
+| Sprint 1 | 스캐폴딩 + CI/CD + Azure 초기 배포 | ✅ 완료 | `docs/sprint-1/plan.md` |
 | Sprint 2 | 캘린더 UI + Todo CRUD + Cosmos DB | 🔜 대기 | `docs/sprint-2/plan.md` |
 | Sprint 3 | Copilot SDK AI 입력 (Tool Call + 스트리밍) ⭐ | 🔜 대기 | `docs/sprint-3/plan.md` |
 | Sprint 4 | GitHub 연동 (PAT + Issue/PR) | 🔜 대기 | `docs/sprint-4/plan.md` |
