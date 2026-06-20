@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Task } from '../api/tasks';
+import type { Task } from '../api/tasks';
 
 interface TaskItemProps {
   task: Task;
@@ -15,14 +15,9 @@ const PRIORITY_COLORS: Record<Task['priority'], string> = {
 };
 
 export function TaskItem({ task, onToggle, onRemove }: TaskItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: task.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),

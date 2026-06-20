@@ -5,12 +5,11 @@ import {
   endOfMonth,
   eachDayOfInterval,
   isSameMonth,
-  isSameDay,
   addMonths,
   subMonths,
   getDay,
 } from 'date-fns';
-import { Task } from '../api/tasks';
+import type { Task } from '../api/tasks';
 
 interface CalendarViewProps {
   selectedDate: string;
@@ -20,11 +19,7 @@ interface CalendarViewProps {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function CalendarView({
-  selectedDate,
-  onSelectDate,
-  tasksByDate,
-}: CalendarViewProps) {
+export function CalendarView({ selectedDate, onSelectDate, tasksByDate }: CalendarViewProps) {
   const [viewMonth, setViewMonth] = useState(() => {
     const [y, m] = selectedDate.split('-').map(Number);
     return new Date(y, m - 1, 1);
@@ -52,9 +47,7 @@ export function CalendarView({
         >
           ‹
         </button>
-        <span className="font-semibold text-sm">
-          {format(viewMonth, 'MMMM yyyy')}
-        </span>
+        <span className="font-semibold text-sm">{format(viewMonth, 'MMMM yyyy')}</span>
         <button
           onClick={nextMonth}
           className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-500 transition-colors"
@@ -67,10 +60,7 @@ export function CalendarView({
       {/* Weekday headers */}
       <div className="grid grid-cols-7 bg-blue-50">
         {WEEKDAYS.map((d) => (
-          <div
-            key={d}
-            className="text-center text-xs font-medium text-gray-500 py-1"
-          >
+          <div key={d} className="text-center text-xs font-medium text-gray-500 py-1">
             {d}
           </div>
         ))}
@@ -90,7 +80,6 @@ export function CalendarView({
           const isCurrentMonth = isSameMonth(day, viewMonth);
           const dayTasks = tasksByDate[dateStr] ?? [];
           const hasTasks = dayTasks.length > 0;
-          const completedCount = dayTasks.filter((t) => t.completed).length;
 
           return (
             <button
@@ -102,17 +91,15 @@ export function CalendarView({
                 isSelected
                   ? 'bg-blue-600 text-white'
                   : isToday
-                  ? 'bg-blue-50 text-blue-700 font-semibold'
-                  : !isCurrentMonth
-                  ? 'text-gray-300'
-                  : 'text-gray-700 hover:bg-blue-50',
+                    ? 'bg-blue-50 text-blue-700 font-semibold'
+                    : !isCurrentMonth
+                      ? 'text-gray-300'
+                      : 'text-gray-700 hover:bg-blue-50',
               ].join(' ')}
               aria-label={`${dateStr}${hasTasks ? `, ${dayTasks.length} task${dayTasks.length > 1 ? 's' : ''}` : ''}`}
               aria-pressed={isSelected}
             >
-              <span className="leading-none font-medium">
-                {format(day, 'd')}
-              </span>
+              <span className="leading-none font-medium">{format(day, 'd')}</span>
 
               {/* Task dots */}
               {hasTasks && (
@@ -122,11 +109,7 @@ export function CalendarView({
                       key={t.id}
                       className={[
                         'w-1 h-1 rounded-full',
-                        isSelected
-                          ? 'bg-white'
-                          : t.completed
-                          ? 'bg-gray-400'
-                          : 'bg-blue-500',
+                        isSelected ? 'bg-white' : t.completed ? 'bg-gray-400' : 'bg-blue-500',
                       ].join(' ')}
                     />
                   ))}
@@ -148,7 +131,12 @@ export function CalendarView({
       <div className="px-3 py-1 text-xs text-gray-500 bg-gray-50 border-t border-gray-100 flex justify-between">
         <span>{format(viewMonth, 'MMMM yyyy')}</span>
         <span>
-          {Object.values(tasksByDate).flat().filter((t) => !t.completed).length} pending
+          {
+            Object.values(tasksByDate)
+              .flat()
+              .filter((t) => !t.completed).length
+          }{' '}
+          pending
         </span>
       </div>
     </div>

@@ -1,18 +1,18 @@
 import {
   DndContext,
-  DragEndEvent,
+  type DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
   DragOverlay,
-  DragStartEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useState } from 'react';
-import { Task } from '../api/tasks';
+import type { Task } from '../api/tasks';
 import { TaskItem } from './TaskItem';
 
 interface TaskListProps {

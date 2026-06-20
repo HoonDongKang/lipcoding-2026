@@ -1,11 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { format } from 'date-fns';
-import {
-  Task,
-  CreateTaskPayload,
-  UpdateTaskPayload,
-  tasksApi,
-} from '../api/tasks';
+import { type Task, type CreateTaskPayload, type UpdateTaskPayload, tasksApi } from '../api/tasks';
 
 interface UseTasksReturn {
   tasks: Task[];
@@ -30,25 +25,49 @@ export function useTasks(): UseTasksReturn {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshTasks = useCallback(async (date?: string) => {
-    const target = date ?? selectedDate;
-    setLoading(true);
-    setError(null);
-    try {
-      const fetched = await tasksApi.getByDate(target);
-      setTasks(fetched);
-      setAllTasksByDate((prev) => ({ ...prev, [target]: fetched }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedDate]);
+  const refreshTasks = useCallback(
+    async (date?: string) => {
+      const target = date ?? selectedDate;
+      setLoading(true);
+      setError(null);
+      try {
+        const fetched = await tasksApi.getByDate(target);
+        setTasks(fetched);
+        setAllTasksByDate((prev) => ({ ...prev, [target]: fetched }));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load tasks');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [selectedDate],
+  );
 
   // Reload when selected date changes
   useEffect(() => {
-    refreshTasks(selectedDate);
-  }, [selectedDate]); // eslint-disable-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const fetched = await tasksApi.getByDate(selectedDate);
+        if (!cancelled) {
+          setTasks(fetched);
+          setAllTasksByDate((prev) => ({ ...prev, [selectedDate]: fetched }));
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load tasks');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDate]);
 
   const addTask = useCallback(
     async (title: string) => {
@@ -67,23 +86,24 @@ export function useTasks(): UseTasksReturn {
     [selectedDate],
   );
 
-  const toggleTask = useCallback(async (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    const payload: UpdateTaskPayload = { completed: !task.completed };
-    try {
-      const updated = await tasksApi.update(id, payload);
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
-      setAllTasksByDate((prev) => ({
-        ...prev,
-        [updated.date]: (prev[updated.date] ?? []).map((t) =>
-          t.id === id ? updated : t,
-        ),
-      }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update task');
-    }
-  }, [tasks]);
+  const toggleTask = useCallback(
+    async (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
+      const payload: UpdateTaskPayload = { completed: !task.completed };
+      try {
+        const updated = await tasksApi.update(id, payload);
+        setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+        setAllTasksByDate((prev) => ({
+          ...prev,
+          [updated.date]: (prev[updated.date] ?? []).map((t) => (t.id === id ? updated : t)),
+        }));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update task');
+      }
+    },
+    [tasks],
+  );
 
   const moveTask = useCallback(
     async (id: string, newDate: string) => {
