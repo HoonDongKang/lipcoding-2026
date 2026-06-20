@@ -11,7 +11,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useStream } from '../hooks/useStream';
-import { loadGitHubSettings } from './SettingsModal';
+import { loadGitHubSettings } from '../lib/githubSettings';
 
 interface AgentInputProps {
   selectedDate: string;

@@ -2,41 +2,21 @@
  * SettingsModal — GitHub PAT / Repo 설정 패널
  * 값은 localStorage에 저장됩니다.
  */
-import { useState, useEffect } from 'react';
-
-const LS_PAT = 'smth_github_pat';
-const LS_REPO = 'smth_github_repo';
-
-export interface GitHubSettings {
-  pat: string;
-  repo: string;
-}
-
-export function loadGitHubSettings(): GitHubSettings {
-  return {
-    pat: localStorage.getItem(LS_PAT) ?? '',
-    repo: localStorage.getItem(LS_REPO) ?? '',
-  };
-}
+import { useState } from 'react';
+import { loadGitHubSettings, saveGitHubSettings } from '../lib/githubSettings';
 
 interface SettingsModalProps {
   onClose: () => void;
 }
 
 export function SettingsModal({ onClose }: SettingsModalProps) {
-  const [pat, setPat] = useState('');
-  const [repo, setRepo] = useState('');
+  const initial = loadGitHubSettings();
+  const [pat, setPat] = useState(initial.pat);
+  const [repo, setRepo] = useState(initial.repo);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    const s = loadGitHubSettings();
-    setPat(s.pat);
-    setRepo(s.repo);
-  }, []);
-
   const handleSave = () => {
-    localStorage.setItem(LS_PAT, pat.trim());
-    localStorage.setItem(LS_REPO, repo.trim());
+    saveGitHubSettings({ pat, repo });
     setSaved(true);
     setTimeout(() => {
       setSaved(false);
