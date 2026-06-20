@@ -317,7 +317,7 @@ export class AgentService {
       // Execute tool calls in parallel
       const toolResults = await Promise.all(
         assistantMsg.tool_calls.map(async (tc) => {
-          const fn = tc.function as any as { arguments: string; name: string };
+          const fn = (tc as any)['function'] as { arguments: string; name: string };
           const args = JSON.parse(fn.arguments || '{}') as Record<
             string,
             unknown
@@ -405,7 +405,7 @@ export class AgentService {
           // Execute tool calls
           const toolResults = await Promise.all(
             assistantMsg.tool_calls.map(async (tc) => {
-              const fn = tc.function as any as {
+              const fn = (tc as any)['function'] as {
                 arguments: string;
                 name: string;
               };

@@ -8,7 +8,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { AgentService, ChatDto } from './agent.service';
+import { AgentService } from './agent.service';
+import type { ChatDto } from './agent.service';
 
 @Controller('agent')
 export class AgentController {
