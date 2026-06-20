@@ -4,9 +4,14 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'https://icy-bay-0df707d00.7.azurestaticapps.net',
+    process.env.FRONTEND_URL,
+  ].filter(Boolean) as string[];
+
   app.enableCors({
-    origin: frontendUrl,
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
