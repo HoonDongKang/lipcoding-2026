@@ -22,8 +22,7 @@ const MAX_LENGTH = 500;
 export function AgentInput({ selectedDate, onTaskCreated }: AgentInputProps) {
   const [expanded, setExpanded] = useState(false);
   const [input, setInput] = useState('');
-  const { response, streaming, error, toolCalls, startStream, reset } =
-    useStream();
+  const { response, streaming, error, toolCalls, startStream, reset } = useStream();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const responseRef = useRef<HTMLDivElement>(null);
 
@@ -99,7 +98,7 @@ export function AgentInput({ selectedDate, onTaskCreated }: AgentInputProps) {
       <div
         id="agent-panel"
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          expanded ? 'max-h-72' : 'max-h-0'
+          expanded ? 'max-h-96' : 'max-h-0'
         }`}
       >
         <div className="px-3 pb-3 flex flex-col gap-2">
@@ -189,7 +188,7 @@ export function AgentInput({ selectedDate, onTaskCreated }: AgentInputProps) {
               className={[
                 'rounded-lg bg-gray-50 border border-gray-200 px-3 py-2',
                 'text-xs font-mono text-gray-700 leading-relaxed',
-                'max-h-28 overflow-y-auto whitespace-pre-wrap',
+                'max-h-48 overflow-y-auto whitespace-pre-wrap',
               ].join(' ')}
               aria-live="polite"
               aria-label="AI 응답"
@@ -222,25 +221,9 @@ export function AgentInput({ selectedDate, onTaskCreated }: AgentInputProps) {
 
 function LoadingSpinner() {
   return (
-    <svg
-      className="w-3 h-3 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8v8z"
-      />
+    <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
     </svg>
   );
 }

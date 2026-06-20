@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { CosmosService } from '../cosmos/cosmos.service';
 import { Task } from './task.entity';
@@ -51,9 +47,7 @@ export class TasksService {
         query: 'SELECT * FROM c WHERE c.date = @date ORDER BY c.createdAt ASC',
         parameters: [{ name: '@date', value: date }],
       };
-      const { resources } = await container.items
-        .query<Task>(query)
-        .fetchAll();
+      const { resources } = await container.items.query<Task>(query).fetchAll();
       return resources;
     }
 
@@ -79,7 +73,18 @@ export class TasksService {
 
       const existing = resources[0];
       const now = new Date().toISOString();
-      const updated: Task = { ...existing, ...dto, updatedAt: now };
+
+      // Strip Cosmos system properties before replace to avoid conflicts
+      const {
+        _rid: _r,
+        _self: _s,
+        _attachments: _a,
+        _ts: _t,
+        _etag: _e,
+        ...cleanExisting
+      } = existing as Task & Record<string, unknown>;
+
+      const updated: Task = { ...cleanExisting, ...dto, updatedAt: now };
 
       const { resource } = await container
         .item(id, existing.date)

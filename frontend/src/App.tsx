@@ -20,7 +20,7 @@ function App() {
   } = useTasks();
 
   return (
-    <div className="w-[400px] h-[600px] bg-gray-50 flex flex-col overflow-hidden">
+    <div className="w-[400px] min-h-[600px] bg-gray-50 flex flex-col overflow-x-hidden">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-blue-600 text-white flex-shrink-0">
         <span className="font-bold text-base">Smart Task Hub</span>
@@ -54,7 +54,7 @@ function App() {
         </div>
 
         {/* Task list */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex-1 min-h-0 overflow-y-auto min-h-[60px]">
           <TaskList
             tasks={tasks}
             selectedDate={selectedDate}
@@ -68,22 +68,14 @@ function App() {
 
         {/* Manual task input */}
         <div className="flex-shrink-0">
-          <TaskInput
-            onAdd={addTask}
-            selectedDate={selectedDate}
-            loading={loading}
-          />
+          <TaskInput onAdd={addTask} selectedDate={selectedDate} loading={loading} />
         </div>
 
         {/* AI Agent input — collapsible, pinned to bottom */}
-        <AgentInput
-          selectedDate={selectedDate}
-          onTaskCreated={refreshTasks}
-        />
+        <AgentInput selectedDate={selectedDate} onTaskCreated={refreshTasks} />
       </div>
     </div>
   );
 }
 
 export default App;
-
