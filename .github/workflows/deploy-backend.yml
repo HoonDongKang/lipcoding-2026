@@ -36,4 +36,5 @@ jobs:
             --name ${{ secrets.AZURE_APP_SERVICE_NAME }} \
             --resource-group smart-task-hub-rg \
             --src-path backend-deploy.zip \
-            --type zip
+            --type zip \
+            --timeout 600
