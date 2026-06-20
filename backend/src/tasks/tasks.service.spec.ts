@@ -23,7 +23,7 @@ describe('TasksService (in-memory fallback)', () => {
 
     service = module.get<TasksService>(TasksService);
     // Reset in-memory store between tests
-    (service as any).inMemoryTasks = [];
+    Object.assign(service, { inMemoryTasks: [] });
   });
 
   afterEach(() => {
