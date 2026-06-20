@@ -248,6 +248,7 @@ export class AgentService {
     name: string,
     args: Record<string, unknown>,
   ): Promise<ToolCallResult> {
+    this.logger.log(`[tool_call] ${name} args=${JSON.stringify(args).slice(0, 120)}`);
     switch (name) {
       case 'createTask':
         return this.executeCreateTask(
@@ -280,7 +281,7 @@ export class AgentService {
     const client = this.buildClient();
     const model = this.getDeployment();
 
-    // NOTE: user input is passed as a separate 'user' role message,
+    this.logger.log(`[chat] user="${sanitized.slice(0, 80)}" date=${today}`);
     // never interpolated into the system prompt (prompt injection defense)
     const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -374,6 +375,8 @@ export class AgentService {
     const today = date ?? this.getToday();
     const client = this.buildClient();
     const model = this.getDeployment();
+
+    this.logger.log(`[stream] user="${sanitized.slice(0, 80)}" date=${today}`);
 
     const messages: ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT },
