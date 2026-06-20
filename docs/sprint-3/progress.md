@@ -16,6 +16,10 @@
 - ProviderConfig type은 `"azure"` (SDK 실제 값), plan의 `"azure-openai"` 표기와 약간 다름
 - 환경변수(`AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_KEY`) 없으면 mock 응답 반환
 
+### 커서 애니메이션
+- Tailwind의 `animate-pulse` 대신 커스텀 `@keyframes blink` CSS 사용 (`index.css`)
+- `prefers-reduced-motion` 미디어 쿼리로 접근성 준수
+
 ---
 
 ## 진행 상황
@@ -24,24 +28,39 @@
 - `@github/copilot-sdk` 설치
 - `openai` 설치
 
-### Phase 2: Backend AgentModule ⏳
-- [ ] agent.module.ts
-- [ ] agent.controller.ts
-- [ ] agent.service.ts
-- [ ] AppModule 등록
-- [ ] 단위 테스트
+### Phase 2: Backend AgentModule ✅
+- [x] agent.module.ts
+- [x] agent.controller.ts
+- [x] agent.service.ts
+- [x] AppModule 등록
+- [x] 단위 테스트
 
-### Phase 3: Frontend ⏳
-- [ ] useStream.ts 훅
-- [ ] AgentInput.tsx 컴포넌트
-- [ ] App.tsx 업데이트
-- [ ] useStream 테스트
+### Phase 3: Frontend ✅
+- [x] `useStream.ts` 훅 — EventSource SSE, token/tool_call/error/done 처리
+- [x] `AgentInput.tsx` 컴포넌트 — textarea (max 500자), AI에게 물어보기 버튼, 스트리밍 응답, collapsible
+- [x] `App.tsx` 업데이트 — AgentInput 하단 배치
+- [x] `TaskItem.tsx` — aiGenerated 배지 (보라색 pill) 확인 완료
+- [x] `useStream` Vitest 테스트 — EventSource 클래스 mock, 11개 테스트 케이스
 
-### Phase 4: 스타일 ⏳
-- [ ] AgentInput 시각적 polish
+### Phase 4: 스타일 ✅
+- [x] `@keyframes blink` 커서 깜빡임 애니메이션 (`index.css`)
+- [x] AgentInput — 파란 그라디언트 border, 회색 응답 배경
+- [x] "✨ AI" 배지 — 보라색 pill (`TaskItem.tsx`)
+
+---
+
+## 테스트 결과
+
+```
+Test Files  4 passed (4)
+Tests       31 passed (31)
+```
+
+- lint: ✅ 0 errors
+- build: ✅ 273.90 kB / gzip 86.30 kB
 
 ---
 
 ## 커밋 로그
 
-(작업 중)
+- `feat: frontend AI input with SSE streaming`
