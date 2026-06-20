@@ -20,7 +20,7 @@ function App() {
   } = useTasks();
 
   return (
-    <div className="w-[400px] min-h-[600px] bg-gray-50 flex flex-col overflow-x-hidden">
+    <div className="w-[400px] h-[600px] bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-blue-600 text-white flex-shrink-0">
         <span className="font-bold text-base">Smart Task Hub</span>
@@ -42,8 +42,8 @@ function App() {
         />
       </div>
 
-      {/* Task panel — bottom ~300px */}
-      <div className="flex flex-col flex-1 min-h-0">
+      {/* Task panel — bottom fills remaining space, scrollable */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {/* Selected date label */}
         <div className="px-3 py-1.5 bg-white border-b border-gray-100 flex items-center gap-2 flex-shrink-0">
           <span className="text-xs font-semibold text-blue-600">{selectedDate}</span>
@@ -53,8 +53,8 @@ function App() {
           </span>
         </div>
 
-        {/* Task list */}
-        <div className="flex-1 min-h-0 overflow-y-auto min-h-[60px]">
+        {/* Task list — fills available space, no extra scroll wrapper needed */}
+        <div className="flex-1 min-h-[60px]">
           <TaskList
             tasks={tasks}
             selectedDate={selectedDate}

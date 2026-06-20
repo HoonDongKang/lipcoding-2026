@@ -73,7 +73,7 @@ export function AgentInput({ selectedDate, onTaskCreated }: AgentInputProps) {
   const charsLeft = MAX_LENGTH - input.length;
 
   return (
-    <div className="border-t border-gray-200 bg-white flex-shrink-0">
+    <div className="border-t border-gray-200 bg-white">
       {/* Toggle bar */}
       <button
         type="button"
