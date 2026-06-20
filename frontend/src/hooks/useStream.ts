@@ -1,11 +1,6 @@
-/**
- * useStream — React hook for consuming SSE from /agent/stream
- *
- * Connects via EventSource, accumulates tokens into `response` state,
- * and exposes streaming/error state + control functions.
- */
 import { useState, useRef, useCallback } from 'react';
 import { agentApi } from '../api/agent';
+import type { AgentSettings } from '../api/agent';
 
 export interface StreamToolCall {
   toolName: string;
@@ -13,19 +8,12 @@ export interface StreamToolCall {
 }
 
 export interface UseStreamResult {
-  /** Accumulated response text */
   response: string;
-  /** Whether stream is active */
   streaming: boolean;
-  /** Error message, if any */
   error: string | null;
-  /** Tool calls received so far */
   toolCalls: StreamToolCall[];
-  /** Start streaming for a message */
-  startStream: (message: string, date: string) => void;
-  /** Abort an in-flight stream */
+  startStream: (message: string, date: string, settings?: AgentSettings) => void;
   stopStream: () => void;
-  /** Clear state (response, error, toolCalls) */
   reset: () => void;
 }
 
@@ -52,15 +40,14 @@ export function useStream(): UseStreamResult {
   }, [stopStream]);
 
   const startStream = useCallback(
-    (message: string, date: string) => {
-      // Close any previous connection
+    (message: string, date: string, settings?: AgentSettings) => {
       stopStream();
       setResponse('');
       setError(null);
       setToolCalls([]);
       setStreaming(true);
 
-      const url = agentApi.streamUrl(message, date);
+      const url = agentApi.streamUrl(message, date, settings);
       const es = new EventSource(url);
       esRef.current = es;
 

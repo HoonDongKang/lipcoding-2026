@@ -278,14 +278,15 @@ export class AgentService {
     };
   }
 
-  async executeCreateGitHubIssue(params: {
-    title: string;
-    body?: string;
-    taskId?: string;
-  }): Promise<ToolCallResult> {
-    const pat = this.configService.get<string>('GITHUB_PAT');
+  async executeCreateGitHubIssue(
+    params: { title: string; body?: string; taskId?: string },
+    overridePat?: string,
+    overrideRepo?: string,
+  ): Promise<ToolCallResult> {
+    const pat = overridePat || this.configService.get<string>('GITHUB_PAT');
     const repo =
-      this.configService.get<string>('GITHUB_REPO') ??
+      overrideRepo ||
+      this.configService.get<string>('GITHUB_REPO') ||
       'HoonDongKang/lipcoding-2026';
 
     if (!pat) {
@@ -376,6 +377,8 @@ export class AgentService {
   private async dispatchTool(
     name: string,
     args: Record<string, unknown>,
+    githubPat?: string,
+    githubRepo?: string,
   ): Promise<ToolCallResult> {
     this.logger.log(
       `[tool_call] ${name} args=${JSON.stringify(args).slice(0, 120)}`,
@@ -394,6 +397,8 @@ export class AgentService {
       case 'createGitHubIssue':
         return this.executeCreateGitHubIssue(
           args as { title: string; body?: string; taskId?: string },
+          githubPat,
+          githubRepo,
         );
       default:
         return { toolName: name, result: { error: `Unknown tool: ${name}` } };
@@ -483,12 +488,9 @@ export class AgentService {
 
   // ─── GET /agent/stream (SSE) ───────────────────────────────────────────────
 
-  stream(message: string, date?: string): Observable<{ data: SseEvent }> {
+  stream(message: string, date?: string, githubPat?: string, githubRepo?: string): Observable<{ data: SseEvent }> {
     const subject = new Subject<{ data: SseEvent }>();
-
-    // Defer to next tick so the subscriber attaches before events are emitted
-    setImmediate(() => void this.runStream(message, date, subject));
-
+    setImmediate(() => void this.runStream(message, date, subject, githubPat, githubRepo));
     return subject.asObservable();
   }
 
@@ -496,6 +498,8 @@ export class AgentService {
     message: string,
     date: string | undefined,
     subject: Subject<{ data: SseEvent }>,
+    githubPat?: string,
+    githubRepo?: string,
   ): Promise<void> {
     if (!this.isConfigured()) {
       subject.next({
@@ -557,7 +561,7 @@ export class AgentService {
                 unknown
               >;
               const toolName = fn.name;
-              const result = await this.dispatchTool(toolName, args);
+              const result = await this.dispatchTool(toolName, args, githubPat, githubRepo);
               toolCallResults.push(result);
               subject.next({
                 data: {
