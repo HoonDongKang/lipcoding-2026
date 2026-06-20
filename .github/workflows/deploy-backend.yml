@@ -21,12 +21,9 @@ jobs:
       - name: Install and build
         working-directory: backend
         run: npm ci && npm run build
-      - name: Install production dependencies
-        working-directory: backend
-        run: npm ci --omit=dev
       - name: Zip artifact for deployment
         working-directory: backend
-        run: zip -r ../backend-deploy.zip dist node_modules package.json package-lock.json
+        run: zip -r ../backend-deploy.zip dist package.json package-lock.json
       - uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
@@ -36,5 +33,4 @@ jobs:
             --name ${{ secrets.AZURE_APP_SERVICE_NAME }} \
             --resource-group smart-task-hub-rg \
             --src-path backend-deploy.zip \
-            --type zip \
-            --timeout 600
+            --type zip
