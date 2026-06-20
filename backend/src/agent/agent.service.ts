@@ -248,7 +248,9 @@ export class AgentService {
     name: string,
     args: Record<string, unknown>,
   ): Promise<ToolCallResult> {
-    this.logger.log(`[tool_call] ${name} args=${JSON.stringify(args).slice(0, 120)}`);
+    this.logger.log(
+      `[tool_call] ${name} args=${JSON.stringify(args).slice(0, 120)}`,
+    );
     switch (name) {
       case 'createTask':
         return this.executeCreateTask(
@@ -318,7 +320,11 @@ export class AgentService {
       // Execute tool calls in parallel
       const toolResults = await Promise.all(
         assistantMsg.tool_calls.map(async (tc) => {
-          const fn = (tc as any)['function'] as { arguments: string; name: string };
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          const fn = (tc as any)['function'] as {
+            arguments: string;
+            name: string;
+          };
           const args = JSON.parse(fn.arguments || '{}') as Record<
             string,
             unknown
@@ -408,6 +414,7 @@ export class AgentService {
           // Execute tool calls
           const toolResults = await Promise.all(
             assistantMsg.tool_calls.map(async (tc) => {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               const fn = (tc as any)['function'] as {
                 arguments: string;
                 name: string;

@@ -74,22 +74,26 @@ export class TasksService {
       const existing = resources[0];
       const now = new Date().toISOString();
 
-      // Strip Cosmos system properties before replace to avoid conflicts
-      const {
-        _rid: _r,
-        _self: _s,
-        _attachments: _a,
-        _ts: _t,
-        _etag: _e,
-        ...cleanExisting
-      } = existing as Task & Record<string, unknown>;
+      // Strip Cosmos system properties before upsert to avoid conflicts
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _rid, _self, _attachments, _ts, _etag, ...cleanExisting } =
+        existing as Task & Record<string, unknown>;
 
       const updated: Task = { ...cleanExisting, ...dto, updatedAt: now };
 
-      const { resource } = await container
-        .item(id, existing.date)
-        .replace(updated);
-      return resource as Task;
+      try {
+        const { resource } = await container
+          .item(id, existing.date)
+          .replace(updated);
+        return resource as Task;
+      } catch (replaceErr) {
+        // Fallback to upsert if replace fails (e.g., etag/session token issues)
+        this.logger.warn(
+          `replace() failed, falling back to upsert: ${String(replaceErr)}`,
+        );
+        const { resource } = await container.items.upsert<Task>(updated);
+        return resource as Task;
+      }
     }
 
     this.logger.warn('Cosmos unavailable — using in-memory store');
