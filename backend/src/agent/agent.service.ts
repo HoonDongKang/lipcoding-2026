@@ -13,7 +13,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Observable, Subject } from 'rxjs';
 import { AzureOpenAI } from 'openai';
-import type { ChatCompletionTool, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import type {
+  ChatCompletionTool,
+  ChatCompletionMessageParam,
+} from 'openai/resources/chat/completions';
 import { TasksService } from '../tasks/tasks.service';
 
 export interface ChatDto {
@@ -46,7 +49,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'createTask',
-      description: '할 일(Todo)을 생성합니다. 날짜와 우선순위를 지정할 수 있습니다.',
+      description:
+        '할 일(Todo)을 생성합니다. 날짜와 우선순위를 지정할 수 있습니다.',
       parameters: {
         type: 'object',
         properties: {
@@ -72,7 +76,8 @@ const TOOLS: ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'prioritizeTasks',
-      description: '특정 날짜의 미완료 할 일을 우선순위 순으로 분석해 반환합니다.',
+      description:
+        '특정 날짜의 미완료 할 일을 우선순위 순으로 분석해 반환합니다.',
       parameters: {
         type: 'object',
         properties: {
@@ -143,10 +148,13 @@ export class AgentService {
 
   /** Strip control characters and enforce length limit */
   private sanitizeInput(input: string): string {
-    return input
-      .slice(0, this.MAX_MESSAGE_LENGTH)
-      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-      .trim();
+    return (
+      input
+        .slice(0, this.MAX_MESSAGE_LENGTH)
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .trim()
+    );
   }
 
   private isConfigured(): boolean {
@@ -176,10 +184,11 @@ export class AgentService {
     priority?: string;
   }): Promise<ToolCallResult> {
     const date = params.date || this.getToday();
-    const priority =
-      (['low', 'medium', 'high'].includes(params.priority ?? '')
+    const priority = (
+      ['low', 'medium', 'high'].includes(params.priority ?? '')
         ? params.priority
-        : 'medium') as 'low' | 'medium' | 'high';
+        : 'medium'
+    ) as 'low' | 'medium' | 'high';
 
     const task = await this.tasksService.create({
       title: params.title,
@@ -296,12 +305,9 @@ export class AgentService {
       if (!choice) break;
 
       const assistantMsg = choice.message;
-      messages.push(assistantMsg as ChatCompletionMessageParam);
+      messages.push(assistantMsg);
 
-      if (
-        choice.finish_reason === 'stop' ||
-        !assistantMsg.tool_calls?.length
-      ) {
+      if (choice.finish_reason === 'stop' || !assistantMsg.tool_calls?.length) {
         return {
           response: assistantMsg.content ?? '',
           toolCalls: toolCallResults,
@@ -311,11 +317,12 @@ export class AgentService {
       // Execute tool calls in parallel
       const toolResults = await Promise.all(
         assistantMsg.tool_calls.map(async (tc) => {
-          const args = JSON.parse(tc.function.arguments || '{}') as Record<
+          const fn = tc.function as any as { arguments: string; name: string };
+          const args = JSON.parse(fn.arguments || '{}') as Record<
             string,
             unknown
           >;
-          const result = await this.dispatchTool(tc.function.name, args);
+          const result = await this.dispatchTool(fn.name, args);
           toolCallResults.push(result);
           return {
             role: 'tool' as const,
@@ -392,21 +399,27 @@ export class AgentService {
         if (!choice) break;
 
         const assistantMsg = choice.message;
-        messages.push(assistantMsg as ChatCompletionMessageParam);
+        messages.push(assistantMsg);
 
         if (assistantMsg.tool_calls?.length) {
           // Execute tool calls
           const toolResults = await Promise.all(
             assistantMsg.tool_calls.map(async (tc) => {
-              const args = JSON.parse(
-                tc.function.arguments || '{}',
-              ) as Record<string, unknown>;
-              const result = await this.dispatchTool(tc.function.name, args);
+              const fn = tc.function as any as {
+                arguments: string;
+                name: string;
+              };
+              const args = JSON.parse(fn.arguments || '{}') as Record<
+                string,
+                unknown
+              >;
+              const toolName = fn.name;
+              const result = await this.dispatchTool(toolName, args);
               toolCallResults.push(result);
               subject.next({
                 data: {
                   type: 'tool_call',
-                  toolName: tc.function.name,
+                  toolName,
                   toolResult: result.result,
                 },
               });
