@@ -2,6 +2,7 @@ import { useTasks } from './hooks/useTasks';
 import { CalendarView } from './components/CalendarView';
 import { TaskList } from './components/TaskList';
 import { TaskInput } from './components/TaskInput';
+import { AgentInput } from './components/AgentInput';
 
 function App() {
   const {
@@ -15,6 +16,7 @@ function App() {
     toggleTask,
     moveTask,
     removeTask,
+    refreshTasks,
   } = useTasks();
 
   return (
@@ -64,7 +66,7 @@ function App() {
           />
         </div>
 
-        {/* Task input (pinned to bottom) */}
+        {/* Manual task input */}
         <div className="flex-shrink-0">
           <TaskInput
             onAdd={addTask}
@@ -72,11 +74,16 @@ function App() {
             loading={loading}
           />
         </div>
+
+        {/* AI Agent input — collapsible, pinned to bottom */}
+        <AgentInput
+          selectedDate={selectedDate}
+          onTaskCreated={refreshTasks}
+        />
       </div>
     </div>
   );
 }
 
 export default App;
-
 
