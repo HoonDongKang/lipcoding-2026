@@ -52,6 +52,11 @@ export class AgentController {
     if (message.length > 500) {
       throw new BadRequestException('message must be 500 characters or less');
     }
-    return this.agentService.stream(message, date, githubPat, githubRepo) as Observable<MessageEvent>;
+    return this.agentService.stream(
+      message,
+      date,
+      githubPat,
+      githubRepo,
+    ) as Observable<MessageEvent>;
   }
 }
